@@ -1,4 +1,4 @@
-\require('dotenv').config();
+require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const nodemailer = require('nodemailer');
@@ -123,3 +123,4 @@ app.get('/send-weekly', async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Live Server running on port ${PORT}`));
+
