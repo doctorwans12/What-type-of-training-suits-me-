@@ -1,14 +1,22 @@
 require('dotenv').config();
 const express = require('express');
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-const nodemailer = require('nodemailer');
 const path = require('path');
+const nodemailer = require('nodemailer');
+
+// --- 1. CRITICAL STRIPE KEY CHECK ---
+// This ensures the server tells you EXACTLY if the key is missing from Render
+const stripeKey = process.env.STRIPE_SECRET_KEY;
+if (!stripeKey || stripeKey.trim() === "") {
+    console.error("❌ CRITICAL ERROR: STRIPE_SECRET_KEY is missing in Render Environment Variables!");
+}
+const stripe = require('stripe')(stripeKey);
+
 const app = express();
 
-// 1. FOLDER CONFIGURATION (Root: 'sport')
+// --- 2. FOLDER SETTINGS ---
 app.use(express.static(__dirname));
 
-// 2. AUTOMATIC 100-WEEK PLAN GENERATOR
+// --- 3. AUTOMATIC 100-WEEK PLAN GENERATOR ---
 const types = ["Strength", "Cardio/HIIT", "Mobility/Yoga", "Endurance"];
 const exercises = [
     ["Squats", "Push-ups", "Deadlifts", "Military Press"],
@@ -20,30 +28,34 @@ const exercises = [
 const weeklyPlans = Array.from({ length: 100 }, (_, i) => {
     const typeIndex = i % types.length;
     const exIndex = i % exercises[typeIndex].length;
-    return `Week ${i + 1} - Focus: ${types[typeIndex]}. 
-    Today's workout: ${exercises[typeIndex][exIndex]} and ${exercises[typeIndex][(exIndex + 1) % 4]}. 
-    Sets: 4 sets x 12 reps. Let's get it!`;
+    return `Week ${i + 1} - Focus: ${types[typeIndex]}. \nWorkout: ${exercises[typeIndex][exIndex]} and ${exercises[typeIndex][(exIndex + 1) % 4]}. \nSets: 4 sets x 12 reps. Keep pushing!`;
 });
 
-// 3. EMAIL CONFIGURATION (Uses GMAIL_USER and GMAIL_PASS from Render)
+// --- 4. EMAIL CONFIGURATION (Nodemailer) ---
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
         user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_PASS // 16-character App Password
+        pass: process.env.GMAIL_PASS // 16-character App Password from Google
     }
 });
 
-// 4. MAIN ROUTE
+// --- 5. ROUTES ---
+
+// Main Page
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// 5. STRIPE PAYMENT ROUTE (Connected to HTML buttons)
+// Stripe Payment Session
 app.get('/pay-session', async (req, res) => {
     const isSub = req.query.subscribe === 'true';
     const choice = req.query.choice || 'Workout-Plan';
     const selectedPrice = isSub ? process.env.PRICE_ID_SUB : process.env.PRICE_ID_ONCE;
+
+    if (!stripeKey) {
+        return res.status(500).send("Server configuration error: Stripe Key is missing in Render settings.");
+    }
 
     try {
         const session = await stripe.checkout.sessions.create({
@@ -60,7 +72,7 @@ app.get('/pay-session', async (req, res) => {
     }
 });
 
-// 6. SUCCESS PAGE (Shown after payment) + WELCOME EMAIL
+// Success Page + Automatic Welcome Email
 app.get('/success', async (req, res) => {
     const sessionId = req.query.session_id;
     const chosenPlan = req.query.plan;
@@ -69,30 +81,30 @@ app.get('/success', async (req, res) => {
         const session = await stripe.checkout.sessions.retrieve(sessionId);
         const customerEmail = session.customer_details.email;
 
-        // Send immediate confirmation
+        // Immediate Email Delivery
         await transporter.sendMail({
             from: process.env.GMAIL_USER,
             to: customerEmail,
             subject: `Welcome! Your ${chosenPlan} plan is active`,
-            text: `Hi! Thank you for your payment. From now on, you will receive a new workout plan every week at this email address.`
+            text: `Hi! Your payment was successful. You will receive a new workout plan every Monday on this email address.`
         });
 
-        // Result displayed on page
         res.send(`
-            <div style="text-align:center; margin-top:100px; font-family: sans-serif; background: #f4f4f4; padding: 50px;">
-                <h1 style="color: #28a745;">Payment Successful! ✔️</h1>
-                <p>Access for <strong>${chosenPlan}</strong> has been activated.</p>
-                <p>A confirmation has been sent to: <strong>${customerEmail}</strong></p>
+            <div style="text-align:center; margin-top:100px; font-family: sans-serif; padding: 20px;">
+                <h1 style="color: #28a745; font-size: 40px;">Payment Successful! ✔️</h1>
+                <p style="font-size: 20px;">The <strong>${chosenPlan}</strong> plan has been activated for <strong>${customerEmail}</strong></p>
+                <p>Check your inbox for your first email.</p>
                 <br>
-                <a href="/" style="background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Back to Site</a>
+                <a href="/" style="background: #007bff; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">Back to Site</a>
             </div>
         `);
     } catch (err) {
-        res.send("Payment confirmed, but there was an error displaying the success page.");
+        console.error("Success Route Error:", err.message);
+        res.send("Payment confirmed, but we encountered an error setting up your success page.");
     }
 });
 
-// 7. AUTOMATION ROUTE (CRON JOB)
+// Weekly Automation Trigger (Cron Job)
 app.get('/send-weekly', async (req, res) => {
     const secret = req.query.secret;
     if (secret !== "SECRET123") return res.status(403).send("Unauthorized");
@@ -105,15 +117,18 @@ app.get('/send-weekly', async (req, res) => {
     try {
         await transporter.sendMail({
             from: process.env.GMAIL_USER,
-            to: process.env.GMAIL_USER, // In production, replace with your customer email list
-            subject: `Your New Plan - Week ${weekOfYear}`,
-            text: `Hi there! Here is your new content for this week:\n\n${currentPlan}`
+            to: process.env.GMAIL_USER, // In production, loop through your database of customer emails
+            subject: `Your Weekly Workout - Week ${weekOfYear}`,
+            text: `Here is your new plan for the week:\n\n${currentPlan}`
         });
-        res.send(`Weekly email sent: Week ${weekOfYear}`);
+        res.send(`Email sent for week ${weekOfYear}`);
     } catch (err) {
-        res.status(500).send("Email Error: " + err.message);
+        res.status(500).send("Email Automation Error: " + err.message);
     }
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`✅ Stripe Key Status: ${stripeKey ? "Detected" : "MISSING"}`);
+});
