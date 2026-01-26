@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>What type of training suits me?</title>
+    <link rel="icon" href="favicon.png" type="image/png">
+    <style>
+        body { font-family: 'Arial', sans-serif; background: #f8f9fa; margin: 0; color: #333; padding-bottom: 120px; }
+        .container { max-width: 800px; margin: 40px auto; background: white; padding: 40px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); }
+        .logo { max-width: 280px; display: block; margin: 0 auto 20px; }
+        .section { display: none; }
+        .active { display: block; }
+        .btn { padding: 15px 30px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; transition: 0.3s; }
+        .btn-start { background: #000; color: white; width: 100%; margin-top: 20px; }
+        .btn-opt { background: #f1f3f5; width: 100%; text-align: left; margin: 8px 0; border: 1px solid #ddd; padding: 15px; }
+        .btn-opt:hover { background: #e2e6ea; }
+
+        /* MANIFESTO PAGE */
+        .manifesto-text { text-align: justify; line-height: 1.8; font-size: 16px; white-space: pre-line; }
+        .roadmap-highlight { background: #fff9db; padding: 20px; border-left: 5px solid #fcc419; margin: 25px 0; font-style: italic; }
+
+        /* FIXED FLOAT BAR - Rămâne fixă pe ecran la Manifesto */
+        .float-bar {
+            position: fixed; bottom: 0; left: 0; width: 100%; 
+            background: white; box-shadow: 0 -5px 25px rgba(0,0,0,0.15);
+            padding: 20px 0; z-index: 9999; text-align: center;
+            display: none; 
+        }
+        .btn-wish { background: #28a745; color: white; margin: 0 10px; min-width: 150px; }
+        .btn-no { background: #dc3545; color: white; margin: 0 10px; min-width: 150px; }
+        .float-title { display: block; margin-bottom: 10px; font-weight: bold; font-size: 18px; color: #000; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="intro" class="section active">
+        <img src="logo.jpg" alt="Logo" class="logo">
+        <p>This test is designed by professionals in the field of sports and will guide you toward a type of sport that suits you, based on the answers you provide. Take your time and answer honestly.</p>
+        <button class="btn btn-start" onclick="navigate('quiz')">Continue</button>
+    </div>
+
+    <div id="quiz" class="section">
+        <h2 id="q-title" style="text-align:center;"></h2>
+        <div id="q-options"></div>
+    </div>
+
+    <div id="manifesto" class="section">
+        <div class="manifesto-text">
+            To live a healthy life, you must prioritize consistent movement and deep cellular hydration every single day.
+            Focus on consuming whole, unprocessed foods that fuel your metabolism, reduce inflammation, and stabilize hormonal levels for peak performance.
+            Quality sleep is the foundation of recovery; aim for at least 8 hours of rest in a dark, cool, and technology-free environment.
+
+            Manage daily stress through mindful practices such as breathing, walking, or meditation, as mental balance is just as important as physical strength.
+            Build sustainable habits instead of short-term fixes, and listen to your body’s signals to avoid burnout or injury.
+            Consistency, patience, and self-discipline are the true drivers of long-term health and vitality.
+
+            Prioritize regular strength and mobility exercises to maintain functional fitness and prevent future injuries.
+            Incorporate a variety of colorful fruits and vegetables to maximize nutrient intake and support gut health.
+            Drink water consistently throughout the day, not just when you feel thirsty, to maintain optimal hydration at the cellular level.
+
+            Take moments of stillness or stretching to reset your nervous system and improve mental clarity.
+            Spend time outdoors for natural sunlight exposure, which supports vitamin D production and circadian rhythm regulation.
+
+            Listen to your body and rest when needed; recovery is as essential as training.
+            Mix cardio, strength, and flexibility workouts for balanced fitness and long-term endurance.
+            Challenge your mind daily through reading, learning, or problem-solving to boost cognitive health.
+            Include anti-inflammatory herbs and natural supplements where appropriate to enhance wellness.
+            Surround yourself with supportive, like-minded people who inspire healthy habits.
+            Set realistic goals and track your progress to stay motivated and accountable.
+            Remember that self-compassion is key; celebrate small victories and embrace your journey to holistic health.
+            Do you wish to continue
+
+            <div class="roadmap-highlight">
+                Why you should continue with us: Most people fail because they lack a professional roadmap to follow weekly.
+                By subscribing to our tips, you receive cutting-edge biohacking advice and personalized drills that evolve as you do.
+                This is not just a plan; it is a commitment to your future self, ensuring you never plateau in your fitness journey.
+                Our experts analyze the latest sports science to bring you actionable steps that fit into your busy schedule.
+                Stay ahead of the curve with insights on nutrition, recovery, and mental toughness delivered to your inbox.
+                Without a guide, it is easy to fall back into old habits that sabotage your hard-earned health gains.
+                Take control of your health now and let us handle the complexity of your weekly training schedule.
+                Health is your most valuable asset—protect it with professional guidance and evidence-based strategies.
+                Your journey to excellence starts with the right information at the right time.
+                do you wish to subscribe?
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="footerBar" class="float-bar">
+    <span class="float-title">Do you wish to continue?</span>
+    <button class="btn btn-wish" onclick="pay(true)">I Wish</button>
+    <button class="btn btn-no" onclick="pay(false)">I Don't Wish</button>
+</div>
+
+<script>
+    // Full list of 20 questions with scoring categories
+    const questions = [
+        { q: "What is your main goal?", a: [{t: "Muscle Mass (Bulk)", c: "power"}, {t: "Weight Loss (Cut)", c: "speed"}, {t: "Maintenance/Toning", c: "stamina"}] },
+        { q: "How many days per week can you go to the gym?", a: [{t: "1–2 days", c: "stamina"}, {t: "3–4 days", c: "power"}, {t: "5+ days", c: "speed"}] },
+        { q: "How long do you want a training session to last?", a: [{t: "45 min", c: "speed"}, {t: "60 min", c: "power"}, {t: "90+ min", c: "stamina"}] },
+        { q: "What is your experience level?", a: [{t: "Beginner", c: "stamina"}, {t: "Intermediate", c: "power"}, {t: "Advanced", c: "speed"}] },
+        { q: "Do you have access to a fully equipped gym?", a: [{t: "Yes", c: "power"}, {t: "Home workouts", c: "stamina"}, {t: "Basic machines", c: "speed"}] },
+        { q: "Which muscle group is your priority?", a: [{t: "Chest/Arms", c: "power"}, {t: "Legs/Glutes", c: "power"}, {t: "Full Body", c: "stamina"}] },
+        { q: "How is your sleep usually?", a: [{t: "Under 6 hours", c: "stamina"}, {t: "7–8 hours", c: "power"}, {t: "Over 8 hours", c: "speed"}] },
+        { q: "How stressful is your workday?", a: [{t: "Physical work", c: "power"}, {t: "Office (Sedentary)", c: "stamina"}, {t: "Very stressful", c: "speed"}] },
+        { q: "Do you prefer training with heavy weights?", a: [{t: "Yes", c: "power"}, {t: "No, higher reps", c: "speed"}, {t: "Mixed", c: "stamina"}] },
+        { q: "Do you currently do cardio?", a: [{t: "Not at all", c: "power"}, {t: "1–2 times per week", c: "stamina"}, {t: "Daily", c: "speed"}] },
+        { q: "Do you have joint or back issues?", a: [{t: "No", c: "speed"}, {t: "Minor pain", c: "power"}, {t: "Chronic problems", c: "stamina"}] },
+        { q: "Do you currently take supplements?", a: [{t: "No", c: "stamina"}, {t: "Basic (Protein)", c: "power"}, {t: "Many", c: "speed"}] },
+        { q: "How fast do you recover after training?", a: [{t: "Slow", c: "stamina"}, {t: "Normal", c: "power"}, {t: "Very fast", c: "speed"}] },
+        { q: "Do you have a training partner?", a: [{t: "Alone", c: "power"}, {t: "With someone", c: "stamina"}, {t: "With a coach", c: "speed"}] },
+        { q: "How do you track your progress?", a: [{t: "By feel", c: "stamina"}, {t: "Scale", c: "power"}, {t: "App/Journal", c: "speed"}] },
+        { q: "Are you willing to follow a strict diet?", a: [{t: "Yes", c: "power"}, {t: "Only approximately", c: "speed"}, {t: "No", c: "stamina"}] },
+        { q: "What demotivates you most often?", a: [{t: "Lack of time", c: "stamina"}, {t: "Lack of fast results", c: "speed"}, {t: "Fatigue", c: "power"}] },
+        { q: "Do you prefer compound exercises (e.g. squats)?", a: [{t: "Yes", c: "power"}, {t: "I prefer machines", c: "speed"}, {t: "Doesn’t matter", c: "stamina"}] },
+        { q: "Have you followed a workout plan before?", a: [{t: "Never", c: "stamina"}, {t: "I’ve tried a few", c: "power"}, {t: "Yes, consistently", c: "speed"}] },
+        { q: "How much water do you drink daily?", a: [{t: "Under 1L", c: "stamina"}, {t: "2–3L", c: "power"}, {t: "Over 3L", c: "speed"}] }
+    ];
+
+    let current = 0;
+    let scores = { power: 0, speed: 0, stamina: 0 };
+
+    function navigate(id) {
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        if(id === 'quiz') loadQ();
+        if(id === 'manifesto') {
+            document.getElementById('footerBar').style.display = 'block';
+            window.scrollTo(0,0);
+        }
+    }
+
+    function loadQ() {
+        if (current >= questions.length) {
+            navigate('manifesto');
+            return;
+        }
+        document.getElementById('q-title').innerText = questions[current].q;
+        const container = document.getElementById('q-options');
+        container.innerHTML = '';
+        questions[current].a.forEach(opt => {
+            const b = document.createElement('button');
+            b.className = 'btn btn-opt';
+            b.innerText = opt.t;
+            b.onclick = () => { 
+                scores[opt.c]++; 
+                current++; 
+                loadQ(); 
+            };
+            container.appendChild(b);
+        });
+    }
+
+    function pay(sub) {
+        const choice = Object.keys(scores).reduce((a, b) => scores[a] > scores[b] ? a : b);
+        window.location.href = `/pay-session?subscribe=${sub}&choice=${choice}`;
+    }
+</script>
+</body>
+</html>
