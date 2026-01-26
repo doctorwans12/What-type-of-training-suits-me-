@@ -1,0 +1,16 @@
+{
+  "name": "what-type-of-training-suits-me",
+  "version": "1.0.0",
+  "description": "Training quiz app",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.0.0",
+    "express": "^4.18.0",
+    "node-cron": "^3.0.0",
+    "nodemailer": "^6.9.0",
+    "stripe": "^11.0.0"
+  }
+}
