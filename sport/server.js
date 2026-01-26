@@ -1,57 +1,62 @@
+
 require('dotenv').config();
 const express = require('express');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const nodemailer = require('nodemailer');
+const cron = require('node-cron');
+const path = require('path'); // Adăugat pentru managementul căilor
 const app = express();
 
-app.use(express.static('public'));
+// Setăm folderul curent (sport) ca sursă pentru fișierele HTML/CSS
+app.use(express.static(path.join(__dirname, '')));
 
+// 1. EMAIL CONFIGURATION
 const transporter = nodemailer.createTransport({
     service: 'gmail',
-    auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_PASS }
+    auth: { 
+        user: process.env.GMAIL_USER, 
+        pass: process.env.GMAIL_PASS 
+    }
 });
 
+// 2. 100 WEEKS OF TIPS
+const weeklyTips = [
+    "Week 1: Focus on 8 hours of sleep for optimal recovery.",
+    "Week 2: Drink 500ml of water with sea salt upon waking.",
+    "Week 3: Try 10 minutes of direct sunlight in the morning.",
+    // Adaugă restul până la 100 aici
+];
+
+// 3. STRIPE PAYMENT SESSION
 app.get('/pay-session', async (req, res) => {
     const isSub = req.query.subscribe === 'true';
+    const userChoice = req.query.choice || 'general'; 
     
-    const items = [{
-        price_data: {
-            currency: 'usd',
-            product_data: { name: 'Professional Sport Test Result' },
-            unit_amount: 100, // 1$
-        },
-        quantity: 1,
-    }];
-
-    if (isSub) {
-        items.push({
-            price: process.env.PRICE_ID, // 2$ weekly sub
-            quantity: 1,
+    try {
+        const session = await stripe.checkout.sessions.create({
+            payment_method_types: ['card'],
+            line_items: [{
+                price: isSub ? process.env.PRICE_ID : undefined,
+                price_data: !isSub ? {
+                    currency: 'usd',
+                    product_data: { name: 'Professional Sport Test Result' },
+                    unit_amount: 100, // $1
+                } : undefined,
+                quantity: 1,
+            }],
+            mode: isSub ? 'subscription' : 'payment',
+            success_url: `${req.protocol}://${req.get('host')}/result?paid=true&sub=${isSub}&choice=${userChoice}`,
+            cancel_url: `${req.protocol}://${req.get('host')}/`,
         });
+        res.redirect(303, session.url);
+    } catch (err) {
+        res.status(500).send("Stripe Error: " + err.message);
     }
-
-    const session = await stripe.checkout.sessions.create({
-        payment_method_types: ['card'],
-        line_items: items,
-        mode: isSub ? 'subscription' : 'payment',
-        success_url: `${req.protocol}://${req.get('host')}/result?paid=true&sub=${isSub}`,
-        cancel_url: `${req.protocol}://${req.get('host')}/`,
-    });
-
-    res.redirect(303, session.url);
 });
 
+// 4. RESULTS PAGE
 app.get('/result', (req, res) => {
-    const isSub = req.query.sub === 'true';
-    if(isSub) {
-        transporter.sendMail({
-            from: process.env.GMAIL_USER,
-            to: process.env.GMAIL_USER, 
-            subject: 'Weekly Biohacking Update',
-            text: 'Your journey starts now. Focus on hydration and sleep this week!'
-        });
-    }
-    res.send("<div style='text-align:center; padding-top:100px;'><h1>Success! Your sport is Bodybuilding & Cardio.</h1></div>");
-});
+    const { paid, sub, choice } = req.query;
+    if (paid !== 'true') return res.redirect('/');
 
-app.listen(3000, () => console.log('Running on http://localhost:3000'));
+    let finalSport = choice === 'power' ? "Bodybuilding
