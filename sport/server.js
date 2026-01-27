@@ -4,28 +4,29 @@ const path = require('path');
 const nodemailer = require('nodemailer');
 
 // --- 1. STRIPE TEST CONFIGURATION ---
-// Ensure your Render Environment Variable 'STRIPE_SECRET_KEY' starts with 'sk_test_'
+// Ensure STRIPE_SECRET_KEY in Render starts with 'sk_test_'
 const stripeKey = (process.env.STRIPE_SECRET_KEY || "").trim();
 const stripe = require('stripe')(stripeKey);
 
 const app = express();
 
-// Serving static files (HTML, CSS, images) from the current directory
+// Serves static files (HTML, CSS, JS) from the root folder
 app.use(express.static(__dirname));
 
-// --- 2. 100-WEEK PLAN GENERATOR (English) ---
+// --- 2. 100-WEEK PLAN GENERATOR ---
+// This logic creates 100 weeks of rotating content automatically
 const types = ["Strength", "Cardio", "Mobility", "Endurance"];
 const exercises = [
     ["Squats", "Push-ups", "Deadlifts", "Military Press"],
     ["Burpees", "Mountain Climbers", "Jump Rope", "Sprints"],
-    ["Sun Salutation", "Pigeon Pose", "Basic Stretching", "Hip Mobility"],
+    ["Sun Salutation", "Pigeon Pose", "Stretching", "Hip Mobility"],
     ["5km Run", "Cycling", "Swimming", "Weighted Walk"]
 ];
 
 const weeklyPlans = Array.from({ length: 100 }, (_, i) => {
     const typeIndex = i % types.length;
     const exIndex = i % exercises[typeIndex].length;
-    return `Week ${i + 1} - ${types[typeIndex]} Focus: ${exercises[typeIndex][exIndex]} and ${exercises[typeIndex][(exIndex + 1) % 4]}. Perform 4 sets of 12 reps. Keep it up!`;
+    return `Week ${i + 1} - ${types[typeIndex]} Focus: ${exercises[typeIndex][exIndex]} and ${exercises[typeIndex][(exIndex + 1) % 4]}. 4 sets of 12 reps.`;
 });
 
 // --- 3. EMAIL SYSTEM (Nodemailer) ---
@@ -33,7 +34,7 @@ const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
         user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_PASS // 16-character Google App Password
+        pass: process.env.GMAIL_PASS // Must be the 16-character Google App Password
     }
 });
 
@@ -44,12 +45,10 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Create Test Payment Session
+// Create Stripe Checkout Session
 app.get('/pay-session', async (req, res) => {
     const isSub = req.query.subscribe === 'true';
     const choice = req.query.choice || 'Workout-Plan';
-    
-    // These Price IDs must be from your Stripe Test Mode
     const priceId = isSub ? process.env.PRICE_ID_SUB : process.env.PRICE_ID_ONCE;
 
     try {
@@ -62,12 +61,12 @@ app.get('/pay-session', async (req, res) => {
         });
         res.redirect(303, session.url);
     } catch (err) {
-        console.error("STRIPE TEST ERROR:", err.message);
-        res.status(500).send(`Test Mode Error: ${err.message}. Check your sk_test key.`);
+        console.error("STRIPE ERROR:", err.message);
+        res.status(500).send(`Stripe Error: ${err.message}. Please check your sk_test key in Render.`);
     }
 });
 
-// Success Page + Confirmation Email
+// Success Page & Automatic Email
 app.get('/success', async (req, res) => {
     const sessionId = req.query.session_id;
     const planName = req.query.plan;
@@ -75,7 +74,7 @@ app.get('/success', async (req, res) => {
         const session = await stripe.checkout.sessions.retrieve(sessionId);
         const userEmail = session.customer_details.email;
 
-        // Send confirmation email
+        // Send welcome email immediately
         await transporter.sendMail({
             from: process.env.GMAIL_USER,
             to: userEmail,
@@ -84,20 +83,21 @@ app.get('/success', async (req, res) => {
         });
 
         res.send(`
-            <div style="text-align:center; margin-top:100px; font-family: sans-serif; padding: 20px;">
-                <h1 style="color: #28a745; font-size: 32px;">TEST Success! ✔️</h1>
-                <p style="font-size: 18px;">Plan <strong>${planName}</strong> is active for <strong>${userEmail}</strong>.</p>
-                <p>A test confirmation email has been sent to your inbox.</p>
+            <div style="text-align:center; margin-top:100px; font-family: sans-serif;">
+                <h1 style="color: #28a745; font-size: 35px;">Payment Successful! ✔️</h1>
+                <p style="font-size: 20px;">The <strong>${planName}</strong> plan is now active for <strong>${userEmail}</strong>.</p>
+                <p>Check your email for your first workout session.</p>
                 <br>
-                <a href="/" style="background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Back to Site</a>
+                <a href="/" style="background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Return to Site</a>
             </div>
         `);
     } catch (err) {
-        res.send("Payment confirmed in test mode. Check your logs for email status.");
+        console.error("SUCCESS ROUTE ERROR:", err.message);
+        res.send("Payment confirmed. Check your email for details.");
     }
 });
 
-// Weekly Email Trigger (Secret URL for Cron Job)
+// Automation Route for Weekly Emails
 app.get('/send-weekly', async (req, res) => {
     if (req.query.secret !== "SECRET123") return res.status(403).send("Unauthorized");
     
@@ -106,13 +106,12 @@ app.get('/send-weekly', async (req, res) => {
     const weekIndex = Math.floor((now - start) / (1000 * 60 * 60 * 24 * 7));
     
     const plan = weeklyPlans[weekIndex % 100];
-    res.send(`Weekly content for week ${weekIndex}: ${plan}`);
+    res.send(`Weekly content generated for week ${weekIndex}: ${plan}`);
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`--- SERVER RUNNING IN TEST MODE ON PORT ${PORT} ---`);
-    console.log(`Key check: ${stripeKey.startsWith('sk_test') ? "OK (TEST)" : "ERROR (NOT TEST KEY)"}`);
+    console.log(`🚀 SERVER RUNNING ON PORT ${PORT}`);
+    // Diagnostic log to catch the error from your screenshot
+    console.log(`✅ Key Status: ${stripeKey.startsWith('sk_test') ? "LOADED (TEST)" : "MISSING/WRONG KEY"}`);
 });
-
-
