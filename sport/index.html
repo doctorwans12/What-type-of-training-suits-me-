@@ -16,11 +16,9 @@
         .btn-opt { background: #f1f3f5; width: 100%; text-align: left; margin: 8px 0; border: 1px solid #ddd; padding: 15px; }
         .btn-opt:hover { background: #e2e6ea; }
 
-        /* MANIFESTO PAGE */
         .manifesto-text { text-align: justify; line-height: 1.8; font-size: 16px; white-space: pre-line; }
         .roadmap-highlight { background: #fff9db; padding: 20px; border-left: 5px solid #fcc419; margin: 25px 0; font-style: italic; }
 
-        /* FIXED FLOAT BAR */
         .float-bar {
             position: fixed; bottom: 0; left: 0; width: 100%; 
             background: white; box-shadow: 0 -5px 25px rgba(0,0,0,0.15);
@@ -93,6 +91,7 @@
             <h2 id="final-type" style="margin-top:0;"></h2>
             <p id="final-desc" style="font-size: 18px;"></p>
             <hr>
+            <p id="email-notif" style="font-weight: bold; color: #28a745;"></p>
             <p>Your Congrats!</p>
             <p style="color: #d9480f;"><strong>good luck with training!</strong></p>
         </div>
@@ -130,70 +129,18 @@
         { q: "Daily water?", a: [{t: "Under 1L", c: "stamina"}, {t: "2-3L", c: "power"}, {t: "3L+", c: "speed"}] }
     ];
 
-    const resultsMap = {
-        power: { name: "POWER & STRENGTH", desc: "You are built for heavy lifting. Focus on compound movements like Squats and Deadlifts with low reps." },
-        speed: { name: "SPEED & AGILITY", desc: "You thrive on explosive movements. HIIT, sprints, and minimal rest periods will give you the best results." },
-        stamina: { name: "ENDURANCE & STAMINA", desc: "Your body is a machine. High volume, steady cardio, and muscular endurance are your strengths." }
-    };
-
-    let current = 0;
-    let scores = { power: 0, speed: 0, stamina: 0 };
-
-    function navigate(id) {
-        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-        if(id === 'quiz') loadQ();
-        if(id === 'manifesto') {
-            document.getElementById('footerBar').style.display = 'block';
-            window.scrollTo(0,0);
-        }
-    }
-
-    function loadQ() {
-        if (current >= questions.length) { navigate('manifesto'); return; }
-        document.getElementById('q-title').innerText = questions[current].q;
-        const container = document.getElementById('q-options');
-        container.innerHTML = '';
-        questions[current].a.forEach(opt => {
-            const b = document.createElement('button');
-            b.className = 'btn btn-opt';
-            b.innerText = opt.t;
-            b.onclick = () => { scores[opt.c]++; current++; loadQ(); };
-            container.appendChild(b);
-        });
-    }
-
-    function pay(sub) {
-        const choice = Object.keys(scores).reduce((a, b) => scores[a] > scores[b] ? a : b);
-        window.location.href = `/pay-session?subscribe=${sub}&choice=${choice}`;
-    }
-    
-
-    window.onload = () => {
-        const params = new URLSearchParams(window.location.search);
-        if (params.has('session_id')) {
-            const plan = params.get('plan');
-            const isSub = params.get('isSub');
-
-            navigate('success-view');
-            document.getElementById('footerBar').style.display = 'none';
-
-            const resultsMap = {
-                power: { name: "POWER & STRENGTH", desc: "You are built for heavy lifting." },
-                speed: { name: "SPEED & AGILITY", desc: "You thrive on explosive movements." },
-                stamina: { name: "ENDURANCE & STAMINA", desc: "Your body is a machine for volume." }
-            const detailedDesc = {
-             power: { 
+    const resultsData = {
+        power: { 
             name: "POWER & STRENGTH", 
-            desc: "Warm-up (10-15 minutes of mobility): Don't jump straight to a loaded barbell. Mobility drills and feeder sets increase the secretion of synovial fluid... No Ego Lifting: Leave your pride at the gym door." 
+            desc: "Warm-up (10-15 min): Mobility drills are vital. Use lifting belts only for heavy sets (85%+). No Ego Lifting: perfect form over heavy plates." 
         },
         speed: { 
             name: "SPEED & AGILITY", 
-            desc: "Landing Technique: Land softly on the balls of your feet. Quality over Quantity: Speed should be trained when you are fresh. Low Center of Gravity: Drop your hips to change direction instantly." 
+            desc: "Landing Technique: Land softly on balls of feet. Quality over Quantity: train speed when fresh. Keep a low center of gravity." 
         },
         stamina: { 
             name: "ENDURANCE & STAMINA", 
-            desc: "The 80/20 Rule: 80% moderate intensity, 20% high intensity. Hydration and Electrolytes: You need salt, magnesium, and potassium. Pacing: Control your pace from the start." 
+            desc: "The 80/20 Rule: 80% moderate, 20% high intensity. Hydration: you need electrolytes (salt, magnesium). Pace yourself to avoid the wall." 
         }
     };
 
@@ -203,7 +150,11 @@
     function navigate(id) {
         document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
         document.getElementById(id).classList.add('active');
-        if(id === 'quiz') loadQ();
+        if(id === 'quiz') {
+            current = 0;
+            scores = { power: 0, speed: 0, stamina: 0 };
+            loadQ();
+        }
         if(id === 'manifesto') {
             document.getElementById('footerBar').style.display = 'block';
             window.scrollTo(0,0);
@@ -211,7 +162,10 @@
     }
 
     function loadQ() {
-        if (current >= questions.length) { navigate('manifesto'); return; }
+        if (current >= questions.length) { 
+            navigate('manifesto'); 
+            return; 
+        }
         document.getElementById('q-title').innerText = questions[current].q;
         const container = document.getElementById('q-options');
         container.innerHTML = '';
@@ -219,7 +173,11 @@
             const b = document.createElement('button');
             b.className = 'btn btn-opt';
             b.innerText = opt.t;
-            b.onclick = () => { scores[opt.c]++; current++; loadQ(); };
+            b.onclick = () => { 
+                scores[opt.c]++; 
+                current++; 
+                loadQ(); 
+            };
             container.appendChild(b);
         });
     }
@@ -244,7 +202,8 @@
             }
 
             if (isSub === 'true') {
-                document.getElementById('email-notif').innerHTML = "ROADMAP SENT VIA EMAIL! CHECK YOUR INBOX.";
+                const notif = document.getElementById('email-notif');
+                if (notif) notif.innerHTML = "ROADMAP SENT VIA EMAIL! CHECK YOUR INBOX.";
             }
         }
     }
