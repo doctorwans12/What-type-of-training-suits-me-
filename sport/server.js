@@ -67,13 +67,13 @@ app.get('/success', async (req, res) => {
 
             // FOARTE IMPORTANT: Nu punem 'await' aici. 
             // Trimiterea pleacă în fundal, iar serverul execută imediat redirect-ul de mai jos.
-           if (isSub === 'true') {
+    if (isSub === 'true') {
             const mailOptions = {
                 from: `"Personal Trainer" <${process.env.GMAIL_USER}>`, // Pune un nume prietenos
                 to: customerEmail,
                 subject: "Important: Your Training Results", // Subiect scurt, fara "100 weeks" (care pare reclama)
                 text: `Hi! Thank you for choosing our program. Here is your roadmap...`, // Text scurt la inceput
-                // SCOATE HEADERELE DE BULK (asta e secretul)
+                // SCOATE HEADERELE DE BULK (asta e secretul) 
             };
 
             transporter.sendMail(mailOptions);
@@ -93,4 +93,5 @@ app.get('/success', async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server activ pe portul ${PORT}`));
+
 
