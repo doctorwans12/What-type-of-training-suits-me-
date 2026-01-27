@@ -6,7 +6,7 @@
     <title>What type of training suits me?</title>
     <link rel="icon" href="favicon.png" type="image/png">
     <style>
-        body { font-family: 'Arial', sans-serif; background: #f8f9fa; margin: 0; color: #333; padding-bottom: 120px; }
+        body { font-family: 'Arial', sans-serif; background: #f8f9fa; margin: 0; color: #333; padding-bottom: 150px; }
         .container { max-width: 800px; margin: 40px auto; background: white; padding: 40px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); }
         .logo { max-width: 280px; display: block; margin: 0 auto 20px; }
         .section { display: none; }
@@ -20,7 +20,7 @@
         .manifesto-text { text-align: justify; line-height: 1.8; font-size: 16px; white-space: pre-line; }
         .roadmap-highlight { background: #fff9db; padding: 20px; border-left: 5px solid #fcc419; margin: 25px 0; font-style: italic; }
 
-        /* FIXED FLOAT BAR - Rămâne fixă pe ecran la Manifesto */
+        /* FIXED FLOAT BAR */
         .float-bar {
             position: fixed; bottom: 0; left: 0; width: 100%; 
             background: white; box-shadow: 0 -5px 25px rgba(0,0,0,0.15);
@@ -30,6 +30,8 @@
         .btn-wish { background: #28a745; color: white; margin: 0 10px; min-width: 150px; }
         .btn-no { background: #dc3545; color: white; margin: 0 10px; min-width: 150px; }
         .float-title { display: block; margin-bottom: 10px; font-weight: bold; font-size: 18px; color: #000; }
+        
+        .result-display-box { background: #e7f5ff; border: 2px solid #228be6; padding: 30px; border-radius: 10px; margin-top: 20px; }
     </style>
 </head>
 <body>
@@ -70,54 +72,69 @@
             Surround yourself with supportive, like-minded people who inspire healthy habits.
             Set realistic goals and track your progress to stay motivated and accountable.
             Remember that self-compassion is key; celebrate small victories and embrace your journey to holistic health.
+            
             Do you wish to continue
 
-         
+
                 Why you should continue with us: Most people fail because they lack a professional roadmap to follow weekly.
                 By subscribing to our tips, you receive cutting-edge biohacking advice and personalized drills that evolve as you do.
                 This is not just a plan; it is a commitment to your future self, ensuring you never plateau in your fitness journey.
                 Our experts analyze the latest sports science to bring you actionable steps that fit into your busy schedule.
-                Stay ahead of the curve with insights on nutrition, recovery, and mental toughness delivered to your inbox.
-                Without a guide, it is easy to fall back into old habits that sabotage your hard-earned health gains.
-                Take control of your health now and let us handle the complexity of your weekly training schedule.
-                Health is your most valuable asset—protect it with professional guidance and evidence-based strategies.
-                Your journey to excellence starts with the right information at the right time.
-                do you wish to subscribe?
+                Health is your most valuable asset—protect it with professional guidance.
             </div>
+            
+            Do you wish to see your professional result?
         </div>
+    </div>
+
+    <div id="success-view" class="section">
+        <h1 style="color: #28a745;">Payment Successful! ✔️</h1>
+        <div class="result-display-box">
+            <h2 id="final-type" style="margin-top:0;"></h2>
+            <p id="final-desc" style="font-size: 18px;"></p>
+            <hr>
+            <p>Your 100-week roadmap has been sent to your email.</p>
+            <p style="color: #d9480f;"><strong>Check your SPAM or PROMOTIONS folder!</strong></p>
+        </div>
+        <button class="btn btn-start" onclick="window.location.href='/'">Take the test again</button>
     </div>
 </div>
 
 <div id="footerBar" class="float-bar">
-    <span class="float-title">Do you wish to continue?</span>
-    <button class="btn btn-wish" onclick="pay(true)">I Wish</button>
-    <button class="btn btn-no" onclick="pay(false)">I Don't Wish</button>
+    <span class="float-title">Do you wish to see your professional roadmap?</span>
+    <button class="btn btn-wish" onclick="pay(true)">I Wish (Subscribe)</button>
+    <button class="btn btn-no" onclick="pay(false)">I Don't Wish (One-time)</button>
 </div>
 
 <script>
-    // Full list of 20 questions with scoring categories
     const questions = [
-        { q: "What is your main goal?", a: [{t: "Muscle Mass (Bulk)", c: "power"}, {t: "Weight Loss (Cut)", c: "speed"}, {t: "Maintenance/Toning", c: "stamina"}] },
-        { q: "How many days per week can you go to the gym?", a: [{t: "1–2 days", c: "stamina"}, {t: "3–4 days", c: "power"}, {t: "5+ days", c: "speed"}] },
-        { q: "How long do you want a training session to last?", a: [{t: "45 min", c: "speed"}, {t: "60 min", c: "power"}, {t: "90+ min", c: "stamina"}] },
-        { q: "What is your experience level?", a: [{t: "Beginner", c: "stamina"}, {t: "Intermediate", c: "power"}, {t: "Advanced", c: "speed"}] },
-        { q: "Do you have access to a fully equipped gym?", a: [{t: "Yes", c: "power"}, {t: "Home workouts", c: "stamina"}, {t: "Basic machines", c: "speed"}] },
-        { q: "Which muscle group is your priority?", a: [{t: "Chest/Arms", c: "power"}, {t: "Legs/Glutes", c: "power"}, {t: "Full Body", c: "stamina"}] },
-        { q: "How is your sleep usually?", a: [{t: "Under 6 hours", c: "stamina"}, {t: "7–8 hours", c: "power"}, {t: "Over 8 hours", c: "speed"}] },
-        { q: "How stressful is your workday?", a: [{t: "Physical work", c: "power"}, {t: "Office (Sedentary)", c: "stamina"}, {t: "Very stressful", c: "speed"}] },
-        { q: "Do you prefer training with heavy weights?", a: [{t: "Yes", c: "power"}, {t: "No, higher reps", c: "speed"}, {t: "Mixed", c: "stamina"}] },
-        { q: "Do you currently do cardio?", a: [{t: "Not at all", c: "power"}, {t: "1–2 times per week", c: "stamina"}, {t: "Daily", c: "speed"}] },
-        { q: "Do you have joint or back issues?", a: [{t: "No", c: "speed"}, {t: "Minor pain", c: "power"}, {t: "Chronic problems", c: "stamina"}] },
-        { q: "Do you currently take supplements?", a: [{t: "No", c: "stamina"}, {t: "Basic (Protein)", c: "power"}, {t: "Many", c: "speed"}] },
-        { q: "How fast do you recover after training?", a: [{t: "Slow", c: "stamina"}, {t: "Normal", c: "power"}, {t: "Very fast", c: "speed"}] },
-        { q: "Do you have a training partner?", a: [{t: "Alone", c: "power"}, {t: "With someone", c: "stamina"}, {t: "With a coach", c: "speed"}] },
-        { q: "How do you track your progress?", a: [{t: "By feel", c: "stamina"}, {t: "Scale", c: "power"}, {t: "App/Journal", c: "speed"}] },
-        { q: "Are you willing to follow a strict diet?", a: [{t: "Yes", c: "power"}, {t: "Only approximately", c: "speed"}, {t: "No", c: "stamina"}] },
-        { q: "What demotivates you most often?", a: [{t: "Lack of time", c: "stamina"}, {t: "Lack of fast results", c: "speed"}, {t: "Fatigue", c: "power"}] },
-        { q: "Do you prefer compound exercises (e.g. squats)?", a: [{t: "Yes", c: "power"}, {t: "I prefer machines", c: "speed"}, {t: "Doesn’t matter", c: "stamina"}] },
-        { q: "Have you followed a workout plan before?", a: [{t: "Never", c: "stamina"}, {t: "I’ve tried a few", c: "power"}, {t: "Yes, consistently", c: "speed"}] },
-        { q: "How much water do you drink daily?", a: [{t: "Under 1L", c: "stamina"}, {t: "2–3L", c: "power"}, {t: "Over 3L", c: "speed"}] }
+        { q: "What is your main goal?", a: [{t: "Muscle Mass (Bulk)", c: "power"}, {t: "Weight Loss (Cut)", c: "speed"}, {t: "Maintenance", c: "stamina"}] },
+        { q: "Days per week for gym?", a: [{t: "1–2 days", c: "stamina"}, {t: "3–4 days", c: "power"}, {t: "5+ days", c: "speed"}] },
+        { q: "Session duration?", a: [{t: "45 min", c: "speed"}, {t: "60 min", c: "power"}, {t: "90+ min", c: "stamina"}] },
+        { q: "Experience level?", a: [{t: "Beginner", c: "stamina"}, {t: "Intermediate", c: "power"}, {t: "Advanced", c: "speed"}] },
+        { q: "Access to fully equipped gym?", a: [{t: "Yes", c: "power"}, {t: "Home", c: "stamina"}, {t: "Basic machines", c: "speed"}] },
+        { q: "Priority muscle?", a: [{t: "Chest/Arms", c: "power"}, {t: "Legs/Glutes", c: "power"}, {t: "Full Body", c: "stamina"}] },
+        { q: "How is your sleep?", a: [{t: "Under 6h", c: "stamina"}, {t: "7–8h", c: "power"}, {t: "8h+", c: "speed"}] },
+        { q: "Workday stress?", a: [{t: "Physical", c: "power"}, {t: "Sedentary", c: "stamina"}, {t: "High Stress", c: "speed"}] },
+        { q: "Heavy weights?", a: [{t: "Yes", c: "power"}, {t: "High Reps", c: "speed"}, {t: "Mixed", c: "stamina"}] },
+        { q: "Cardio frequency?", a: [{t: "None", c: "power"}, {t: "1-2/week", c: "stamina"}, {t: "Daily", c: "speed"}] },
+        { q: "Joint issues?", a: [{t: "No", c: "speed"}, {t: "Minor", c: "power"}, {t: "Chronic", c: "stamina"}] },
+        { q: "Supplements?", a: [{t: "No", c: "stamina"}, {t: "Basic", c: "power"}, {t: "Advanced", c: "speed"}] },
+        { q: "Recovery speed?", a: [{t: "Slow", c: "stamina"}, {t: "Normal", c: "power"}, {t: "Fast", c: "speed"}] },
+        { q: "Training partner?", a: [{t: "Alone", c: "power"}, {t: "With partner", c: "stamina"}, {t: "With coach", c: "speed"}] },
+        { q: "Progress tracking?", a: [{t: "Feelings", c: "stamina"}, {t: "Scale", c: "power"}, {t: "App/Journal", c: "speed"}] },
+        { q: "Strict diet?", a: [{t: "Yes", c: "power"}, {t: "Approx", c: "speed"}, {t: "No", c: "stamina"}] },
+        { q: "Main demotivator?", a: [{t: "No time", c: "stamina"}, {t: "No results", c: "speed"}, {t: "Fatigue", c: "power"}] },
+        { q: "Compound movements?", a: [{t: "Yes", c: "power"}, {t: "Machines", c: "speed"}, {t: "Mixed", c: "stamina"}] },
+        { q: "Previous plans?", a: [{t: "Never", c: "stamina"}, {t: "Tried", c: "power"}, {t: "Consistent", c: "speed"}] },
+        { q: "Daily water?", a: [{t: "Under 1L", c: "stamina"}, {t: "2-3L", c: "power"}, {t: "3L+", c: "speed"}] }
     ];
+
+    const resultsMap = {
+        power: { name: "POWER & STRENGTH", desc: "You are built for heavy lifting. Focus on compound movements like Squats and Deadlifts with low reps." },
+        speed: { name: "SPEED & AGILITY", desc: "You thrive on explosive movements. HIIT, sprints, and minimal rest periods will give you the best results." },
+        stamina: { name: "ENDURANCE & STAMINA", desc: "Your body is a machine. High volume, steady cardio, and muscular endurance are your strengths." }
+    };
 
     let current = 0;
     let scores = { power: 0, speed: 0, stamina: 0 };
@@ -133,10 +150,7 @@
     }
 
     function loadQ() {
-        if (current >= questions.length) {
-            navigate('manifesto');
-            return;
-        }
+        if (current >= questions.length) { navigate('manifesto'); return; }
         document.getElementById('q-title').innerText = questions[current].q;
         const container = document.getElementById('q-options');
         container.innerHTML = '';
@@ -144,11 +158,7 @@
             const b = document.createElement('button');
             b.className = 'btn btn-opt';
             b.innerText = opt.t;
-            b.onclick = () => { 
-                scores[opt.c]++; 
-                current++; 
-                loadQ(); 
-            };
+            b.onclick = () => { scores[opt.c]++; current++; loadQ(); };
             container.appendChild(b);
         });
     }
@@ -157,8 +167,18 @@
         const choice = Object.keys(scores).reduce((a, b) => scores[a] > scores[b] ? a : b);
         window.location.href = `/pay-session?subscribe=${sub}&choice=${choice}`;
     }
+
+    // CHECK FOR RETURN FROM STRIPE
+    window.onload = () => {
+        const params = new URLSearchParams(window.location.search);
+        if (params.has('session_id')) {
+            const plan = params.get('plan');
+            navigate('success-view');
+            document.getElementById('footerBar').style.display = 'none';
+            document.getElementById('final-type').innerText = resultsMap[plan].name;
+            document.getElementById('final-desc').innerText = resultsMap[plan].desc;
+        }
+    }
 </script>
 </body>
 </html>
-
-
