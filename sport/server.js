@@ -3,18 +3,14 @@ const express = require('express');
 const path = require('path');
 const nodemailer = require('nodemailer');
 
-// --- 1. STRIPE TEST CONFIGURATION ---
-// Ensure STRIPE_SECRET_KEY in Render starts with 'sk_test_'
+// --- 1. STRIPE CONFIGURATION ---
 const stripeKey = (process.env.STRIPE_SECRET_KEY || "").trim();
 const stripe = require('stripe')(stripeKey);
 
 const app = express();
-
-// Serves static files (HTML, CSS, JS) from the root folder
 app.use(express.static(__dirname));
 
-// --- 2. 100-WEEK PLAN GENERATOR ---
-// This logic creates 100 weeks of rotating content automatically
+// --- 2. 100-WEEK WORKOUT GENERATOR ---
 const types = ["Strength", "Cardio", "Mobility", "Endurance"];
 const exercises = [
     ["Squats", "Push-ups", "Deadlifts", "Military Press"],
@@ -26,26 +22,26 @@ const exercises = [
 const weeklyPlans = Array.from({ length: 100 }, (_, i) => {
     const typeIndex = i % types.length;
     const exIndex = i % exercises[typeIndex].length;
-    return `Week ${i + 1} - ${types[typeIndex]} Focus: ${exercises[typeIndex][exIndex]} and ${exercises[typeIndex][(exIndex + 1) % 4]}. 4 sets of 12 reps.`;
+    return `Week ${i + 1} - ${types[typeIndex]} Focus: ${exercises[typeIndex][exIndex]} and ${exercises[typeIndex][(exIndex + 1) % 4]}. Sets: 4x12.`;
 });
 
-// --- 3. EMAIL SYSTEM (Nodemailer) ---
+// --- 3. EMAIL CONFIGURATION ---
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
         user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_PASS // Must be the 16-character Google App Password
+        pass: process.env.GMAIL_PASS // 16-character App Password
     }
 });
 
 // --- 4. ROUTES ---
 
-// Main Landing Page
+// Redirect to Landing Page
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Create Stripe Checkout Session
+// Start Payment
 app.get('/pay-session', async (req, res) => {
     const isSub = req.query.subscribe === 'true';
     const choice = req.query.choice || 'Workout-Plan';
@@ -61,12 +57,12 @@ app.get('/pay-session', async (req, res) => {
         });
         res.redirect(303, session.url);
     } catch (err) {
-        console.error("STRIPE ERROR:", err.message);
-        res.status(500).send(`Stripe Error: ${err.message}. Please check your sk_test key in Render.`);
+        console.error("Stripe Error:", err.message);
+        res.status(500).send("Payment system error.");
     }
 });
 
-// Success Page & Automatic Email
+// Success Page with Result & Auto-Redirect
 app.get('/success', async (req, res) => {
     const sessionId = req.query.session_id;
     const planName = req.query.plan;
@@ -74,44 +70,60 @@ app.get('/success', async (req, res) => {
         const session = await stripe.checkout.sessions.retrieve(sessionId);
         const userEmail = session.customer_details.email;
 
-        // Send welcome email immediately
+        // Welcome Email
         await transporter.sendMail({
             from: process.env.GMAIL_USER,
             to: userEmail,
-            subject: `Welcome! Your ${planName} Plan is Active`,
-            text: `Hi! Your test payment was successful. You will receive a new workout plan every Monday at this email address.`
+            subject: `Welcome! Your ${planName} Plan is Ready`,
+            
         });
 
+        // Display Result and Redirect back to site after 5 seconds
         res.send(`
             <div style="text-align:center; margin-top:100px; font-family: sans-serif;">
-                <h1 style="color: #28a745; font-size: 35px;">Payment Successful! ✔️</h1>
-                <p style="font-size: 20px;">The <strong>${planName}</strong> plan is now active for <strong>${userEmail}</strong>.</p>
-                <p>Check your email for your first workout session.</p>
-                <br>
-                <a href="/" style="background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Return to Site</a>
+                <h1 style="color: #28a745;">Payment Successful! ✔️</h1>
+                <p>Plan <strong>${planName}</strong> active for <strong>${userEmail}</strong>.</p>
+                <p>Redirecting you back to the main site in 5 seconds...</p>
+                <script>
+                    setTimeout(function(){ window.location.href = "/"; }, 5000);
+                </script>
             </div>
         `);
     } catch (err) {
-        console.error("SUCCESS ROUTE ERROR:", err.message);
-        res.send("Payment confirmed. Check your email for details.");
+        res.redirect("/");
     }
 });
 
-// Automation Route for Weekly Emails
+// Weekly Email Route (Triggered by Cron Job) - Optimized for SPAM
 app.get('/send-weekly', async (req, res) => {
     if (req.query.secret !== "SECRET123") return res.status(403).send("Unauthorized");
     
     const now = new Date();
     const start = new Date(now.getFullYear(), 0, 0);
     const weekIndex = Math.floor((now - start) / (1000 * 60 * 60 * 24 * 7));
-    
     const plan = weeklyPlans[weekIndex % 100];
-    res.send(`Weekly content generated for week ${weekIndex}: ${plan}`);
+
+    try {
+        await transporter.sendMail({
+            from: process.env.GMAIL_USER,
+            to: process.env.GMAIL_USER, // Replace with subscriber list
+            subject: `Weekly Update - ${weekIndex}`,
+            text: plan,
+            // Low priority and bulk headers to force Spam/Promotions tab
+            headers: {
+                "Precedence": "bulk",
+                "X-Priority": "5",
+                "List-Unsubscribe": "<mailto:unsub@yoursite.com>"
+            }
+        });
+        res.send(`Sent: ${plan}`);
+    } catch (err) {
+        res.status(500).send("Email failed.");
+    }
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`🚀 SERVER RUNNING ON PORT ${PORT}`);
-    // Diagnostic log to catch the error from your screenshot
-    console.log(`✅ Key Status: ${stripeKey.startsWith('sk_test') ? "LOADED (TEST)" : "MISSING/WRONG KEY"}`);
+    console.log(`🚀 Server fully operational on port ${PORT}`);
+    console.log(`Status: ${stripeKey.startsWith('sk_test') ? "TEST MODE" : "KEY ERROR"}`);
 });
