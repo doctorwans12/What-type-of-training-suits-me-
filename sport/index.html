@@ -72,7 +72,9 @@
             Surround yourself with supportive, like-minded people who inspire healthy habits.
             Set realistic goals and track your progress to stay motivated and accountable.
             Remember that self-compassion is key; celebrate small victories and embrace your journey to holistic health.
+            
             Do you wish?
+            
                 Why you should continue with us: Most people fail because they lack a professional roadmap to follow weekly.
                 By subscribing to our tips, you receive cutting-edge biohacking advice and personalized drills that evolve as you do.
                 This is not just a plan; it is a commitment to your future self, ensuring you never plateau in your fitness journey.
@@ -165,19 +167,29 @@
         const choice = Object.keys(scores).reduce((a, b) => scores[a] > scores[b] ? a : b);
         window.location.href = `/pay-session?subscribe=${sub}&choice=${choice}`;
     }
+    
 
-    // CHECK FOR RETURN FROM STRIPE
-   window.onload = () => {
+    window.onload = () => {
         const params = new URLSearchParams(window.location.search);
         if (params.has('session_id')) {
             const plan = params.get('plan');
             const isSub = params.get('isSub');
 
-            // 1. Schimbam sectiunea vizibila
             navigate('success-view');
-            
-            // 2. Ascundem bara de jos
             document.getElementById('footerBar').style.display = 'none';
+
+            const resultsMap = {
+                power: { name: "POWER & STRENGTH", desc: "You are built for heavy lifting." },
+                speed: { name: "SPEED & AGILITY", desc: "You thrive on explosive movements." },
+                stamina: { name: "ENDURANCE & STAMINA", desc: "Your body is a machine for volume." }
+            };
+
+            document.getElementById('final-type').innerText = resultsMap[plan].name;
+            document.getElementById('final-desc').innerText = resultsMap[plan].desc;
+
+            if (isSub === 'true') {
+                document.getElementById('email-notif').innerHTML = "ROADMAP SENT! <br> ";
+            }
         }
     }
 </script>
