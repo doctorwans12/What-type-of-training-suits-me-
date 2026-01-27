@@ -7,26 +7,23 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const app = express();
 app.use(express.static(__dirname));
 
-// --- CONFIGURARE EMAIL (GMAIL) ---
+// CONFIGURARE EMAIL
 const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true, 
-    auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_PASS // Parola de aplicație de 16 caractere
-    }
+    service: 'gmail',
+    auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_PASS }
 });
 
-// LOGICA CELOR 100 DE SĂPTĂMÂNI
-const trainingPlan = Array.from({ length: 100 }, (_, i) => `Săptămâna ${i + 1}: Antrenament intens focusat pe progres.`).join('\n');
+// GENERATOR TEXT 100 SĂPTĂMÂNI
+const trainingPlan = Array.from({ length: 100 }, (_, i) => `Week ${i + 1}: Professional training drill #${i + 101}. Focus on progressive overload.`).join('\n');
 
-app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'index.html')); });
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
 
-// RUTA DE PLATĂ
+// 1. RUTA DE PLATĂ
 app.get('/pay-session', async (req, res) => {
     const isSub = req.query.subscribe === 'true';
-    const choice = req.query.choice;
+    const choice = req.query.choice; 
     const priceId = isSub ? process.env.PRICE_ID_SUB : process.env.PRICE_ID_ONCE;
 
     try {
@@ -34,15 +31,17 @@ app.get('/pay-session', async (req, res) => {
             payment_method_types: ['card'],
             line_items: [{ price: priceId, quantity: 1 }],
             mode: isSub ? 'subscription' : 'payment',
-            // Trimitem isSub în URL-ul de succes pentru a ști dacă trimitem email-ul lung
+            // Trimitem isSub și choice către ruta de success
             success_url: `${req.protocol}://${req.get('host')}/success?session_id={CHECKOUT_SESSION_ID}&plan=${choice}&isSub=${isSub}`,
             cancel_url: `${req.protocol}://${req.get('host')}/`,
         });
         res.redirect(303, session.url);
-    } catch (err) { res.status(500).send("Eroare Stripe."); }
+    } catch (err) {
+        res.status(500).send("Stripe Error");
+    }
 });
 
-// RUTA DE SUCCES (Aici se decide trimiterea email-ului)
+// 2. RUTA DE SUCCESS (Trimite emailul și dă REDIRECT înapoi la HTML)
 app.get('/success', async (req, res) => {
     const { session_id, plan, isSub } = req.query;
 
@@ -50,27 +49,25 @@ app.get('/success', async (req, res) => {
         const session = await stripe.checkout.sessions.retrieve(session_id);
         const customerEmail = session.customer_details.email;
 
-        // VERIFICARE: Trimitem email-ul DOAR dacă este abonament (isSub === 'true')
+        // Trimitem emailul lung DOAR dacă a ales abonamentul (isSub === true)
         if (isSub === 'true') {
             await transporter.sendMail({
                 from: `"Professional Roadmap" <${process.env.GMAIL_USER}>`,
                 to: customerEmail,
-                subject: `Your 100-Week ${plan.toUpperCase()} Roadmap`,
-                text: `Felicitări pentru abonament! Iată planul tău pe 100 de săptămâni:\n\n${trainingPlan}`,
+                subject: "Your 100-Week Training Roadmap",
+                text: `Felicitări! Iată planul tău pe 100 de săptămâni:\n\n${trainingPlan}`,
                 headers: {
                     "Precedence": "bulk",
-                    "X-Priority": "5" // Forțăm SPAM
+                    "X-Priority": "5" // Forțează intrarea în SPAM
                 }
             });
-            console.log(`✅ Email abonament trimis către ${customerEmail}`);
-        } else {
-            console.log(`ℹ️ Plată unică pentru ${customerEmail}. Nu s-a trimis planul de 100 săptămâni.`);
+            console.log("Email abonament trimis.");
         }
 
-        // Redirect înapoi la index.html pentru a afișa rezultatul pe ecran
-        res.redirect(`/?session_id=${session_id}&plan=${plan}`);
+        // REDIRECT ÎNAPOI LA PAGINA PRINCIPALĂ CU DATELE PENTRU AFIȘARE
+        res.redirect(`/?session_id=${session_id}&plan=${plan}&isSub=${isSub}`);
     } catch (err) {
-        console.error("Eroare:", err.message);
+        console.error("Error in success route:", err);
         res.redirect("/");
     }
 });
