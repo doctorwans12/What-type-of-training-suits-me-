@@ -82,4 +82,28 @@ app.get('/success', async (req, res) => {
 
 // 4. LOGICA PENTRU E-MAILURILE SĂPTĂMÂNALE (Bulk/Cron)
 app.get('/send-weekly-bulk', async (req, res) => {
-    if (req.query.
+    if (req.query.secret !== "REGELE_SECRET_123") return res.status(403).send("Unauthorized");
+
+    try {
+        // Notă: Într-o aplicație reală, aici ai face un loop prin baza de date cu abonați
+        const userEmail = "client@email.com"; 
+        
+        await transporter.sendMail({
+            from: process.env.GMAIL_USER,
+            to: userEmail,
+            subject: "Your Weekly Training Roadmap (Update)",
+            text: "Aceasta este saptamana ta de antrenament profesional. Nu te opri acum!",
+            headers: {
+                "Precedence": "bulk",
+                "X-Priority": "5",
+                "X-Auto-Response-Suppress": "All"
+            }
+        });
+        res.send("E-mailul săptămânal a fost trimis în Spam.");
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`🚀 Serverul rulează pe portul ${PORT}`));
