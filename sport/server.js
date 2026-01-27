@@ -7,17 +7,17 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const app = express();
 app.use(express.static(__dirname));
 
-// CONFIGURARE NODEMAILER - Testată pentru Render/Gmail
+// CONFIGURARE NODEMAILER - Curată pentru Inbox
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 465,
     secure: true, 
     auth: {
         user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_PASS // Aici pui parola de aplicatie de 16 caractere
+        pass: process.env.GMAIL_PASS // Parola de aplicatie (16 caractere)
     },
     tls: {
-        rejectUnauthorized: false // Ajută să nu se blocheze pe serverele Render
+        rejectUnauthorized: false
     }
 });
 
@@ -25,6 +25,7 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+// 1. RUTA DE PLATA
 app.get('/pay-session', async (req, res) => {
     const isSub = req.query.subscribe === 'true';
     const choice = req.query.choice; 
@@ -41,10 +42,11 @@ app.get('/pay-session', async (req, res) => {
         res.redirect(303, session.url);
     } catch (err) {
         console.error("Stripe Error:", err.message);
-        res.status(500).send("Eroare la plata.");
+        res.status(500).send("Eroare la Stripe.");
     }
 });
 
+// 2. RUTA DE SUCCES - REPARATA COMPLET
 app.get('/success', async (req, res) => {
     const { session_id, plan, isSub } = req.query;
 
@@ -52,37 +54,23 @@ app.get('/success', async (req, res) => {
         const session = await stripe.checkout.sessions.retrieve(session_id);
         const customerEmail = session.customer_details.email;
 
-        // TRIMITE EMAIL DOAR DACĂ E ABONAMENT
         if (isSub === 'true') {
             const mailOptions = {
-                from: `"Training Pro" <${process.env.GMAIL_USER}>`,
+                from: `"Personal Trainer" <${process.env.GMAIL_USER}>`,
                 to: customerEmail,
-                subject: "Your 100-Week Training Roadmap",
-                text: "Felicitari! Planul tau profesional pe 100 de saptamani a fost activat.",
-                headers: {
-                    "Precedence": "bulk",
-                    "X-Priority": "5"
-                }
+                subject: "Important: Your Training Results",
+                text: `Hi! Thank you for choosing our program. Here is your professional roadmap. Let's get to work!`
+                // Am scos headerele de bulk ca sa intre in INBOX, nu in Spam
             };
 
-            // FOARTE IMPORTANT: Nu punem 'await' aici. 
-            // Trimiterea pleacă în fundal, iar serverul execută imediat redirect-ul de mai jos.
-    if (isSub === 'true') {
-            const mailOptions = {
-                from: `"Personal Trainer" <${process.env.GMAIL_USER}>`, // Pune un nume prietenos
-                to: customerEmail,
-                subject: "Important: Your Training Results", // Subiect scurt, fara "100 weeks" (care pare reclama)
-                text: `Hi! Thank you for choosing our program. Here is your roadmap...`, // Text scurt la inceput
-                // SCOATE HEADERELE DE BULK (asta e secretul) 
-            };
-
-            transporter.sendMail(mailOptions);
-        }
-                
+            // Trimitere asincrona (nu blocheaza redirect-ul)
+            transporter.sendMail(mailOptions, (err, info) => {
+                if (err) console.log("❌ Eroare Mail:", err.message);
+                else console.log("✅ Mail trimis in Inbox!");
             });
         }
 
-        // REDIRECT INSTANTĂ ÎNAPOI LA SITE
+        // REDIRECT INSTANT LA HTML
         res.redirect(`/?session_id=${session_id}&plan=${plan}&isSub=${isSub}`);
         
     } catch (err) {
